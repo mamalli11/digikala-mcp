@@ -101,6 +101,13 @@
       "title": "اسمارت تکنولوژی قشم",
       "code": "CGDG9"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img16200986.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -134,6 +141,13 @@
       "title": "اسمارت تکنولوژی قشم",
       "code": "CGDG9"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img13287099.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -166,6 +180,13 @@
       "id": 389375,
       "title": "اسمارت تکنولوژی قشم",
       "code": "CGDG9"
+     }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20490694.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
      }
     }
    }

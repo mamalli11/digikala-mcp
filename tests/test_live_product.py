@@ -1,4 +1,5 @@
 import pytest
+from conftest import assert_images
 
 pytestmark = [pytest.mark.anyio, pytest.mark.live]
 
@@ -8,6 +9,7 @@ PID = {"product_id": 20109389}  # Samsung Galaxy A07, a long-lived best seller
 async def call(client, name, args):
     result = await client.call_tool(name, args)
     assert not result.is_error, result.content[0].text
+    assert_images(result.structured_content, name)
     return result.structured_content
 
 

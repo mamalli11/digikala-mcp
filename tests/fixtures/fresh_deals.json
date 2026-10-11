@@ -87,6 +87,13 @@
       "title": "دیجی‌کالا",
       "code": "5A52N"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img12707263.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -130,6 +137,13 @@
       "title": "دیجی‌کالا",
       "code": "5A52N"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img12646840.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -172,6 +186,13 @@
       "id": 1,
       "title": "دیجی‌کالا",
       "code": "5A52N"
+     }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img12645886.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
      }
     }
    }

@@ -87,6 +87,13 @@
       "title": "اهورایی",
       "code": "ASRDJ"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22783516.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -130,6 +137,13 @@
       "title": "برزان",
       "code": "C2NNT"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22563640.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -172,6 +186,13 @@
       "id": 1546,
       "title": " پارس هدفون",
       "code": "5A6ZU"
+     }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22544803.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
      }
     }
    }

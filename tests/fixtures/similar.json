@@ -77,6 +77,13 @@
       "title": "ستیاکو",
       "code": "GXPCF"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img21050747.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -111,6 +118,13 @@
       "title": "اسمارت تکنولوژی قشم",
       "code": "CGDG9"
      }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22396154.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
     }
    },
    {
@@ -143,6 +157,13 @@
       "id": 840322,
       "title": "پایاگستر شهر",
       "code": "DVEFT"
+     }
+    },
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img21050952.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
      }
     }
    }

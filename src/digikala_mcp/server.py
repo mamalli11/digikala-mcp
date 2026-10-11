@@ -30,6 +30,7 @@ Conventions: all prices are Toman (the API's Rial divided by 10; gold prices are
 Ratings are 0-5 like the site (null = not rated); review stars 1-5. Product ids are the number in
 'dkp-<id>' URLs, e.g. 20109389. Category and brand codes are English slugs ('mobile-phone',
 'samsung'). Persian and English queries both work. Shipping cost is only known at checkout.
+Product cards carry `image` (a small photo URL) and dk_product an `images` list (max 4).
 Answers are cached for 2 minutes.
 """
 

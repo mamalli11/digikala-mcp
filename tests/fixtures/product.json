@@ -550,6 +550,45 @@
    "ai_voice_url": "https://s3.ir-thr-at1.arvanstorage.ir/digikala-public/digikala-static-audio/bedeaa4043bef3d2b9a89eaceb3ed76bca5b56d1_1767113512.mp3",
    "data_layer": {
     "brand": "سامسونگ"
+   },
+   "images": {
+    "main": {
+     "url": [
+      "https://dkstatics-public.digikala.com/digikala-products/img20109389.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+     ]
+    },
+    "list": [
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_0.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_1.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_2.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_3.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_4.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img20109389_5.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
+    ]
    }
   }
  }

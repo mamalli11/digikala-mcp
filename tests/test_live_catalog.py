@@ -1,4 +1,7 @@
 import pytest
+from conftest import assert_images
+
+from digikala_mcp.catalog import norm
 
 pytestmark = [pytest.mark.anyio, pytest.mark.live]
 
@@ -8,6 +11,7 @@ SELLER = "CGDG9"
 async def call(client, name, args):
     result = await client.call_tool(name, args)
     assert not result.is_error, result.content[0].text
+    assert_images(result.structured_content, name)
     return result.structured_content
 
 
@@ -26,7 +30,7 @@ async def test_dk_search(client):
     data = await call(client, "dk_search", {"query": "گوشی سامسونگ", "sort": "cheapest", "min_price": 5000000})
     assert data["products"] and all(p["in_stock"] and p["price"] >= 5000000 for p in data["products"])
     assert prices(data) == sorted(prices(data))
-    assert await text_size(client, "dk_search", {"query": "گوشی سامسونگ"}) < 15000
+    assert await text_size(client, "dk_search", {"query": "گوشی سامسونگ"}) < 18000  # 20 image URLs add ~3 KB
 
 
 async def test_dk_search_flags_loose_matches(client):
@@ -131,7 +135,7 @@ async def test_dk_deals_supermarket(client):
     data = await call(client, "dk_deals", {"store": "supermarket"})
     assert data["products"] and all(p["price"] > 0 for p in data["products"])
     milk = await call(client, "dk_deals", {"store": "supermarket", "query": "شیر"})
-    assert milk["products"] and all("شیر" in p["title"] for p in milk["products"])
+    assert milk["products"] and all("شیر" in norm(p["title"]) for p in milk["products"])
 
 
 async def test_dk_best_sellers(client):

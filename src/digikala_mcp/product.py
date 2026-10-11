@@ -8,7 +8,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
-from .catalog import InStock, Page, Sort, card, listing, listing_params, stars, toman
+from .catalog import InStock, Page, Sort, card, image_url, listing, listing_params, stars, toman
 from .http import SITE, ApiError, fetch
 from .registry import tool
 
@@ -68,6 +68,7 @@ async def dk_product(
         "questions_count": p.get("questions_count"),
         "offers_count": len(offers),
         "offers": offers[:max_offers],
+        "images": [u for u in map(image_url, (p.get("images") or {}).get("list") or []) if u][:4],
     }
     if store == "supermarket":  # where the main service's 301 points
         result["url"] = f"{SITE}/supermarket/product/{product_id}/"
@@ -256,7 +257,17 @@ async def dk_compare(
     }
 
 
-SHORTLIST_KEYS = ("id", "title", "price", "price_before_discount", "discount_pct", "in_stock", "rating", "rating_count")
+SHORTLIST_KEYS = (
+    "id",
+    "title",
+    "image",
+    "price",
+    "price_before_discount",
+    "discount_pct",
+    "in_stock",
+    "rating",
+    "rating_count",
+)
 
 
 @tool("Re-check a shortlist")

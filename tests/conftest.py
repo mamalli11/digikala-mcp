@@ -11,6 +11,19 @@ from digikala_mcp.server import mcp
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+def assert_images(data, tool=""):
+    """Every product card (has in_stock and url) carries an absolute https `image`; returns how many cards."""
+    if isinstance(data, list):
+        return sum(assert_images(x, tool) for x in data)
+    if not isinstance(data, dict):
+        return 0
+    here = 0
+    if "in_stock" in data and "url" in data:
+        assert str(data.get("image")).startswith("https://"), (tool, data.get("id"), data.get("image"))
+        here = 1
+    return here + sum(assert_images(v, tool) for v in data.values())
+
+
 def fixture(name: str):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
@@ -60,4 +73,13 @@ def api():
 @pytest.fixture
 async def client():
     async with Client(mcp, raise_exceptions=True) as c:
+        call_tool = c.call_tool
+
+        async def checked(*args, **kwargs):
+            result = await call_tool(*args, **kwargs)
+            if not result.is_error:
+                assert_images(result.structured_content, args[0])
+            return result
+
+        c.call_tool = checked
         yield c

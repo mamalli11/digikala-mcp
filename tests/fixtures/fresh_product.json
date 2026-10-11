@@ -181,7 +181,46 @@
      ]
     }
    ],
-   "digify_touchpoint": ""
+   "digify_touchpoint": "",
+   "images": {
+    "main": {
+     "url": [
+      "https://dkstatics-public.digikala.com/digikala-products/img4369031.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+     ]
+    },
+    "list": [
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_0.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_1.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_2.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_3.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_4.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     },
+     {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img4369031_5.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
+    ]
+   }
   }
  }
 }

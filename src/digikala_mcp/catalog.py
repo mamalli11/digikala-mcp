@@ -707,8 +707,14 @@ def card(p: dict[str, Any]) -> dict[str, Any]:
         "rating": stars(rating.get("rate")),
         "rating_count": rating.get("count") or 0,
         "deal_ends": price.get("time") if price.get("is_incredible") else None,
+        "image": image_url((p.get("images") or {}).get("main")),
         "url": product_url(p.get("id")),
     }
+
+
+def image_url(img: dict[str, Any] | None) -> str | None:
+    """First https URL of an API image ({"url": [...]}); the API serves a 300 px JPEG."""
+    return next((u for u in (img or {}).get("url") or [] if u.startswith("https://")), None)
 
 
 def toman(rial: int | None) -> int | None:

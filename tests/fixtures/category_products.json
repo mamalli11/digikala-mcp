@@ -58,7 +58,14 @@
     "data_layer": {
      "brand": "اپل"
     },
-    "default_variant": []
+    "default_variant": [],
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22667973.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
+    }
    },
    {
     "id": 22719748,
@@ -72,7 +79,14 @@
     "data_layer": {
      "brand": "اپل"
     },
-    "default_variant": []
+    "default_variant": [],
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22719748.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
+    }
    },
    {
     "id": 22706421,
@@ -86,7 +100,14 @@
     "data_layer": {
      "brand": "اپل"
     },
-    "default_variant": []
+    "default_variant": [],
+    "images": {
+     "main": {
+      "url": [
+       "https://dkstatics-public.digikala.com/digikala-products/img22706421.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80"
+      ]
+     }
+    }
    }
   ],
   "sort_options": [

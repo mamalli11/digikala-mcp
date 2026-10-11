@@ -17,6 +17,7 @@ async def test_dk_product(client, api):
     assert p["category"] == {"id": 11, "code": "mobile-phone", "title": "گوشی موبایل"}
     assert p["lowest_price_30d"] == 28373600 and p["colors"] == ["سبز", "مشکی"]
     assert p["offers_count"] == 8
+    assert p["image"].startswith("https://") and len(p["images"]) == 4 and p["images"][0] != p["image"]
     # cheapest first, across colors and sellers
     assert [(o["variant_id"], o["price"]) for o in p["offers"]] == [
         (72287314, 42503600),
