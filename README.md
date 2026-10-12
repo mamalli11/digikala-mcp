@@ -2,13 +2,13 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/sepehr071/digikala-mcp/main/.github/banner.png" alt="digikala-mcp: let your AI agent compare every seller on Digikala" width="100%">
+<img src="https://raw.githubusercontent.com/sepehr071/digikala-mcp/main/.github/banner.png" alt="digikala-mcp: unofficial Digikala MCP server for Claude, Cursor and Copilot" width="100%">
 
-# 🛍️ digikala-mcp
+# digikala-mcp: Digikala MCP server for AI agents
 
-**Let your AI agent shop around on Digikala.**<br>
-Search Iran's largest online store, compare every seller's offer, check a product's price history,<br>
-read reviews and Q&A, and catch today's Incredible Offers, all from Claude, Cursor or Copilot.
+**Let your AI agent shop around on Digikala (دیجی&zwnj;کالا).**<br>
+An unofficial, read-only MCP server for Iran's largest online store: search products, compare every seller's offer,<br>
+check a product's price history, read reviews and Q&A, and catch today's Incredible Offers, all from Claude, Cursor or Copilot.
 
 [![PyPI](https://img.shields.io/pypi/v/digikala-mcp?color=2563eb)](https://pypi.org/project/digikala-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/digikala-mcp)](https://pypi.org/project/digikala-mcp/)
@@ -19,11 +19,25 @@ read reviews and Q&A, and catch today's Incredible Offers, all from Claude, Curs
 [![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=digikala&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJkaWdpa2FsYS1tY3AiXX0=)
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_digikala--mcp-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=digikala&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22digikala-mcp%22%5D%7D)
 
-[Quick start](#quick-start) · [What it can do](#what-it-can-do) · [Tools](#tools) · [FAQ](#faq) · [فارسی](#فارسی)
+[For AI agents](#for-ai-agents) · [Quick start](#quick-start) · [What it can do](#what-it-can-do) · [Tools](#tools) · [FAQ](#faq) · [فارسی](#فارسی)
 
 </div>
 
 ---
+
+## For AI agents
+
+- **What:** unofficial MCP server for Digikala (digikala.com, Iran). Queries in Persian or English, prices in Toman.
+- **Install:** `uvx digikala-mcp` or `claude mcp add digikala -- uvx digikala-mcp`. Transport: stdio. Needs [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python 3.10+).
+- **Auth:** none, no API key or account. Optional `DIGIKALA_MCP_PROXY` (HTTP proxy, e.g. with an Iranian exit if Digikala blocks yours).
+- **Access:** read-only. No login, cart, checkout or payment, so no confirmation is needed before calling any tool.
+- **Tools:** 23, all prefixed `dk_`. Start with `dk_find_cheapest`, `dk_search`, `dk_best_for_budget`, `dk_deals`.
+  Typical sequence: `dk_find_cheapest` -> `dk_product` -> `dk_price_history`.
+- **Use when:** finding, comparing or judging prices of products and sellers on Digikala, including the Fresh supermarket.
+- **Do not use when:** the user wants to buy, or needs shipping cost (only calculated at checkout) or anything behind a login.
+- **Output:** compact JSON. Prices in Toman, ratings 0-5 (`null` = not rated). Numeric product ids (the `<id>` of `dkp-<id>`) pass between tools.
+- **Machine-readable:** [`server.json`](https://github.com/sepehr071/digikala-mcp/blob/main/server.json) and the
+  [awesome-iran-mcp catalog](https://github.com/sepehr071/awesome-iran-mcp) (`TOOLS.md`, `servers.json`, `llms.txt`).
 
 ## Why
 
@@ -205,6 +219,27 @@ All 23 tools are annotated `readOnlyHint: true` and return compact structured JS
 ## FAQ
 
 <details>
+<summary><b>Is there a Digikala API or MCP server for AI agents?</b></summary>
+
+Yes: `digikala-mcp` is an unofficial MCP server with 23 read-only tools for search, seller offers, price history,
+reviews and deals. It calls the same public endpoints the digikala.com web app uses; no API key is needed.
+</details>
+
+<details>
+<summary><b>How do I use Digikala with Claude, Cursor or Copilot?</b></summary>
+
+Add the server with `claude mcp add digikala -- uvx digikala-mcp` (or the matching config in
+[Quick start](#quick-start) for Claude Desktop, Cursor and VS Code), then ask in plain language, in Persian or English.
+</details>
+
+<details>
+<summary><b>Is it official, safe and free?</b></summary>
+
+It is unofficial and not affiliated with Digikala. It is read-only (no login, cart or payment), runs on your machine,
+and is free under the MIT license.
+</details>
+
+<details>
 <summary><b>Do I need an Iranian IP?</b></summary>
 
 Usually not: in testing the API answered from a foreign (Turkish) exit. If every tool fails with
@@ -247,11 +282,13 @@ npx @modelcontextprotocol/inspector uvx digikala-mcp
 |---|---|---|
 | `DIGIKALA_MCP_PROXY` | unset | HTTP proxy for every request, e.g. `http://user:pass@host:port` |
 
-## فارسی
+<a id="فارسی"></a>
+
+## فارسی: سرور MCP دیجی&zwnj;کالا
 
 <div dir="rtl">
 
-**digikala-mcp** به دستیار هوش مصنوعی شما (Claude، Cursor، Copilot و ...) اجازه می&zwnj;دهد در دیجی&zwnj;کالا جستجو کند،
+**digikala-mcp** یک سرور MCP غیررسمی و فقط&zwnj;خواندنی برای دیجی&zwnj;کالا، بزرگ&zwnj;ترین فروشگاه اینترنتی ایران، است. این سرور به دستیار هوش مصنوعی شما (Claude، Cursor، Copilot و ...) اجازه می&zwnj;دهد در دیجی&zwnj;کالا جستجو کند،
 قیمت همه فروشندگان یک کالا را مقایسه کند، تاریخچه قیمت، نظرات و پرسش&zwnj;وپاسخ&zwnj;ها را بخواند و پیشنهادهای شگفت&zwnj;انگیز را پیدا کند.
 
 **چه کارهایی می&zwnj;کند**
@@ -313,6 +350,12 @@ docstring that tells the agent when to use it. Issues and PRs are welcome, espec
 Releases: bump the version in `pyproject.toml` and `server.json`, then push a `v*` tag. GitHub Actions tests,
 publishes to PyPI and the [MCP Registry](https://registry.modelcontextprotocol.io), and creates the GitHub Release.
 
+## Related servers
+
+- [Technolife MCP server](https://github.com/sepehr071/technolife-mcp) for electronics prices, with installment prices
+- [MasterKala MCP server](https://github.com/sepehr071/masterkala-mcp) for gadgets and phone accessories
+- [awesome-iran-mcp](https://github.com/sepehr071/awesome-iran-mcp): catalog of all Iranian-service MCP servers
+
 ## Disclaimer
 
 Unofficial and not affiliated with or endorsed by Digikala. It uses the public endpoints of the digikala.com web
@@ -321,3 +364,5 @@ app, which can change without notice. Please keep request rates reasonable.
 ## License
 
 [MIT](https://github.com/sepehr071/digikala-mcp/blob/main/LICENSE)
+
+If this saves you clicks, a star helps others find it.
