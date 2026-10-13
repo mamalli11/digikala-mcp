@@ -1,11 +1,11 @@
 [project]
 name = "digikala-mcp"
-version = "0.3.1"
+version = "0.3.2"
 description = "Unofficial read-only MCP server for Digikala: search with feature filters, best picks for a budget, compare sellers and prices, price history, reviews, deals."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Sepehr", email = "sepehr@nextofx.com" }]
+authors = [{ name = "Sepehr Radmard", email = "sepehrr80@gmail.com" }]
 requires-python = ">=3.10"
 keywords = ["mcp", "model-context-protocol", "digikala", "iran", "e-commerce", "shopping", "price-comparison"]
 classifiers = [
