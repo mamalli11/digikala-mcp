@@ -34,8 +34,9 @@ def anyio_backend():
 
 
 @pytest.fixture(autouse=True)
-def fresh_http_client():
+def fresh_http_client(monkeypatch):
     """The shared httpx client is bound to one event loop; each test gets a new loop and an empty category cache."""
+    monkeypatch.setattr(http, "RETRY_DELAY", 0)
     http.set_transport(None)
     catalog._tree = None
     yield
@@ -78,6 +79,7 @@ async def client():
         async def checked(*args, **kwargs):
             result = await call_tool(*args, **kwargs)
             if not result.is_error:
+                result.structured_content = json.loads(result.content[0].text)
                 assert_images(result.structured_content, args[0])
             return result
 

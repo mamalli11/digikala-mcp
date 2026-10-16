@@ -26,7 +26,6 @@ async def test_dk_search(client, api):
         "seller": "دیجی\u200cکالا",
         "rating": 4.4,  # 87.64 / 20
         "rating_count": 2164,
-        "deal_ends": None,
         "image": "https://dkstatics-public.digikala.com/digikala-products/img20109389.jpg?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80",
         "url": "https://www.digikala.com/product/dkp-20109389/",
         "match": "all",

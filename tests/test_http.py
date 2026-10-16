@@ -1,6 +1,12 @@
+import json
+
 import httpx
 import pytest
 from conftest import fixture
+from mcp import Client
+from mcp.types import TextContent
+
+from digikala_mcp.server import mcp
 
 pytestmark = pytest.mark.anyio
 
@@ -61,3 +67,44 @@ async def test_network_error(client, api):
     api["/v1/digiplus/plans/"] = boom
     result = await client.call_tool("dk_plus_plans", {})
     assert result.is_error and "Could not reach api.digikala.com" in result.content[0].text
+    assert len(api.calls) == 2  # retried once
+
+
+async def test_one_retry_on_5xx_but_not_on_4xx(client, api):
+    hits = []
+
+    def flaky(request):
+        hits.append(1)
+        return (
+            httpx.Response(503, text="down") if len(hits) == 1 else httpx.Response(200, json=fixture("plus_plans.json"))
+        )
+
+    api["/v1/digiplus/plans/"] = flaky
+    assert not (await client.call_tool("dk_plus_plans", {})).is_error and len(hits) == 2
+    api["/v1/best-selling/"] = lambda r: httpx.Response(404, json={"status": 404})
+    assert (await client.call_tool("dk_best_sellers", {})).is_error
+    assert sum(r.url.path == "/v1/best-selling/" for r in api.calls) == 1
+
+
+async def test_redirect_to_another_host_is_refused(client, api):
+    api["/v1/autocomplete/"] = lambda r: httpx.Response(307, headers={"Location": "https://evil.example/x"})
+    result = await client.call_tool("dk_suggest", {"query": "samsung"})
+    assert result.is_error and "another host" in result.content[0].text
+    assert all(r.url.host == "api.digikala.com" for r in api.calls)
+
+
+async def test_wire_format_is_one_text_block_and_no_output_schema(api):
+    """The real SDK client, without conftest's patch: one compact TextContent, no structuredContent, no outputSchema."""
+    api["/v1/autocomplete/"] = fixture("autocomplete.json")
+    async with Client(mcp, raise_exceptions=True) as c:
+        assert all(t.output_schema is None for t in (await c.list_tools()).tools)
+        result = await c.call_tool("dk_suggest", {"query": "samsung"})
+    assert result.structured_content is None and len(result.content) == 1
+    assert isinstance(result.content[0], TextContent) and " " not in result.content[0].text[:20]
+    json.loads(result.content[0].text)
+
+
+async def test_input_schemas_have_no_title_noise():
+    for t in await mcp.list_tools():
+        assert "title" not in t.input_schema, t.name
+        assert all("title" not in p for p in t.input_schema.get("properties", {}).values()), t.name

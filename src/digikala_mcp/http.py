@@ -29,6 +29,7 @@ MAX_CONCURRENCY = 4
 # that a short cache saves Digikala and the user time. ponytail: unbounded age-ordered dict, trimmed by size.
 CACHE_SECONDS = 120
 CACHE_SIZE = 300
+RETRY_DELAY = 0.5
 
 _transport: httpx.AsyncBaseTransport | None = None
 _client: httpx.AsyncClient | None = None
@@ -51,6 +52,12 @@ def set_transport(transport: httpx.AsyncBaseTransport | None) -> None:
     _cache.clear()
 
 
+async def _same_host(r: httpx.Response) -> None:
+    """Refuse a redirect off api.digikala.com (the CDN cookie challenge redirects to the same URL)."""
+    if r.has_redirect_location and r.url.join(r.headers["location"]).host != httpx.URL(API).host:
+        raise ApiError(f"{httpx.URL(API).host} redirected to another host; refused.")
+
+
 def _get_client() -> tuple[httpx.AsyncClient, asyncio.Semaphore]:
     global _client, _limit
     if _client is None:
@@ -61,7 +68,9 @@ def _get_client() -> tuple[httpx.AsyncClient, asyncio.Semaphore]:
             transport=_transport,
             headers=HEADERS,
             timeout=20,
+            limits=httpx.Limits(max_connections=2 * MAX_CONCURRENCY),
             follow_redirects=True,
+            event_hooks={"response": [_same_host]},
             trust_env=False,
             proxy=os.environ.get("DIGIKALA_MCP_PROXY") or None,
         )
@@ -70,17 +79,26 @@ def _get_client() -> tuple[httpx.AsyncClient, asyncio.Semaphore]:
     return _client, _limit
 
 
-async def fetch(path: str, params: dict[str, Any] | None = None) -> Any:
+async def fetch(path: str, params: dict[str, Any] | None = None, cache: bool = True) -> Any:
     """GET an api.digikala.com path (e.g. '/v1/search/') and return the parsed JSON body.
 
     The body `status` is authoritative: HTTP 200 with `{"status": 404}` raises ApiError too.
-    Successful bodies are reused for CACHE_SECONDS; callers must not mutate them.
+    Successful bodies are reused for CACHE_SECONDS (unless cache=False); callers must not mutate them.
+    A timeout, network error or 5xx is retried once after RETRY_DELAY (every call is an idempotent GET).
     """
     key = (path, tuple(sorted((params or {}).items())))
-    hit = _cache.get(key)
+    hit = _cache.get(key) if cache else None
     if hit and time.monotonic() - hit[0] < CACHE_SECONDS:
         return hit[1]
-    body = await _get(path, params)
+    try:
+        body = await _get(path, params)
+    except ApiError as e:
+        if e.status is not None and e.status < 500:
+            raise
+        await asyncio.sleep(RETRY_DELAY)
+        body = await _get(path, params)
+    if not cache:
+        return body
     _cache.pop(key, None)
     _cache[key] = (time.monotonic(), body)
     if len(_cache) > CACHE_SIZE:

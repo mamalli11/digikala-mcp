@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated, Any
 
 from pydantic import Field
@@ -13,11 +14,7 @@ from .registry import tool
 
 @tool("Digikala Plus plans")
 async def dk_plus_plans() -> dict[str, Any]:
-    """List Digikala Plus membership plans (free shipments) with their price in Toman and benefits.
-
-    Use when shipping cost matters: Plus members get a number of free deliveries per month
-    (jet = same-day Tehran/Karaj, fresh = supermarket). Exact shipping fees are only shown at checkout.
-    """
+    """List Digikala Plus plans (free shipments per month: jet = same-day Tehran/Karaj, fresh = supermarket) with price in Toman and benefits."""
     data = (await fetch("/v1/digiplus/plans/"))["data"]
     return {
         "plans": [
@@ -41,14 +38,13 @@ async def dk_plus_plans() -> dict[str, Any]:
 
 @tool("Gold and coin prices")
 async def dk_gold_prices() -> dict[str, Any]:
-    """Get Digikala's live 18k gold price per gram and gold coin prices, in Toman.
+    """Get the live 18k gold price per gram and gold coin prices, in Toman.
 
-    gold18_day_change_pct is the change since the previous daily point; gold18_period_change_pct,
-    low and high cover the ~3-month chart. Coins' change_pct is as Digikala shows it (its period
-    is not documented). Coins with price null are not for sale right now.
+    gold18_day_change_pct is vs the previous daily point; period change, low and high cover the ~3-month
+    chart. Coins' change_pct is as Digikala shows it. Coins with price null are not for sale.
     """
-    coins = (await fetch("/v1/super-app/price-list/"))["data"]
-    gold = (await fetch("/v1/super-app/price-chart/gold18/"))["data"]
+    coins, gold = await asyncio.gather(fetch("/v1/super-app/price-list/"), fetch("/v1/super-app/price-chart/gold18/"))
+    coins, gold = coins["data"], gold["data"]
     chart = gold.get("chart") or {}
     y = (chart.get("data") or {}).get("y") or []
     # Both endpoints already answer in Toman, unlike product prices.
@@ -94,8 +90,7 @@ async def dk_location(
 ) -> dict[str, Any]:
     """Turn an address into coordinates, or coordinates into an address with Digikala's city_id and state_id.
 
-    Pass address + city, or lat + long. Product prices are the
-    same everywhere; location only matters for delivery options shown at checkout.
+    Pass address + city, or lat + long. Prices are the same everywhere; location only affects delivery.
     """
     if lat is not None and long is not None:
         a = (await fetch("/v1/map/reverse-geo/", {"latitude": lat, "longitude": long}))["data"].get("address") or {}

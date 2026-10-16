@@ -109,6 +109,37 @@ async def test_dk_reviews(client, api):
     assert sent["sort"] == "buyers" and sent["page"] == "2"
 
 
+async def test_dk_reviews_caps(client, api):
+    body = fixture("comments.json")
+    body["data"]["comments"][0]["advantages"] = [f"p{i}" + "x" * 100 for i in range(8)]
+    api["/v1/rate-review/products/20109389/"] = body
+    data = (await client.call_tool("dk_reviews", {**PID, "limit": 2})).structured_content
+    first = data["reviews"][0]
+    assert len(data["reviews"]) == 2 and len(first["pros"]) == 5 and len(first["pros"][0]) == 81
+    assert all(v is not None for r in data["reviews"] for v in r.values())  # null fields are left out
+
+
+async def test_dk_reviews_full_text(client, api):
+    body = fixture("comments.json")
+    body["data"]["comments"][0]["advantages"] = [f"p{i}" + "x" * 100 for i in range(8)]
+    api["/v1/rate-review/products/20109389/"] = body
+    data = (await client.call_tool("dk_reviews", {**PID, "full_text": True})).structured_content
+    first, long = data["reviews"][0], data["reviews"][1]
+    assert len(first["pros"]) == 8 and len(first["pros"][0]) == 102
+    assert len(long["text"]) == len(body["data"]["comments"][1]["body"]) > 301 and not long["text"].endswith("…")
+
+
+async def test_dk_questions_full_text(client, api):
+    body = fixture("questions.json")
+    body["data"]["questions"][0]["text"] = "q" * 400
+    body["data"]["questions"][0]["answers"][0]["text"] = "a" * 400
+    api["/v1/product/20109389/questions/"] = body
+    short = (await client.call_tool("dk_questions", PID)).structured_content["questions"][0]
+    full = (await client.call_tool("dk_questions", {**PID, "full_text": True})).structured_content["questions"][0]
+    assert len(short["text"]) == 301 and len(short["answers"][0]["text"]) == 301
+    assert full["text"] == "q" * 400 and full["answers"][0]["text"] == "a" * 400
+
+
 async def test_dk_questions(client, api):
     api["/v1/product/20109389/questions/"] = fixture("questions.json")
     data = (await client.call_tool("dk_questions", PID)).structured_content
