@@ -37,6 +37,7 @@ def anyio_backend():
 def fresh_http_client(monkeypatch):
     """The shared httpx client is bound to one event loop; each test gets a new loop and an empty category cache."""
     monkeypatch.setattr(http, "RETRY_DELAY", 0)
+    monkeypatch.setattr(http, "JITTER", (0, 0))
     http.set_transport(None)
     catalog._tree = None
     yield

@@ -29,7 +29,7 @@ check a product's price history, read reviews and Q&A, and catch today's Incredi
 
 - **What:** unofficial MCP server for Digikala (digikala.com, Iran). Queries in Persian or English, prices in Toman.
 - **Install:** `uvx digikala-mcp` or `claude mcp add digikala -- uvx digikala-mcp`. Transport: stdio. Needs [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python 3.10+).
-- **Auth:** none, no API key or account. Optional `DIGIKALA_MCP_PROXY` (HTTP proxy, e.g. with an Iranian exit if Digikala blocks yours).
+- **Auth:** none, no API key or account. Optional `DIGIKALA_MCP_PROXY` (HTTP proxy, or a comma-separated list, e.g. with an Iranian exit if Digikala blocks yours).
 - **Access:** read-only. No login, cart, checkout or payment, so no confirmation is needed before calling any tool.
 - **Tools:** 23, all prefixed `dk_`. Start with `dk_find_cheapest`, `dk_search`, `dk_best_for_budget`, `dk_deals`.
   Typical sequence: `dk_find_cheapest` -> `dk_product` -> `dk_price_history`.
@@ -212,7 +212,7 @@ All 23 tools are annotated `readOnlyHint: true` and return compact structured JS
 - **The 30-day low ignores one-day dips.** `dk_shortlist` compares today's price with the lowest price that held on two days in a row (`low_30d`), because Digikala's own 30-day low (`lowest_one_day_30d`, `dk_product`'s `lowest_price_30d`) can be a single day of one color. `dk_price_history` gives both per color.
 - **Photos**: cards carry `image`, `dk_product` an `images` list (max 4), both absolute https URLs taken from the API as-is. They end in `?x-oss-process=image/resize,m_lfit,h_300,w_300/quality,q_80`, so they are 300 px JPEGs; drop that suffix for the original size.
 - **Prices move several times an hour** on popular listings with many sellers; re-check right before buying.
-- **Answers are cached for 2 minutes**, so an agent repeating a call doesn't hit Digikala again; prices can lag the site by that much. A timeout or 5xx is retried once.
+- **Answers are cached for 2 minutes**, so an agent repeating a call doesn't hit Digikala again; prices can lag the site by that much. A timeout, 5xx or 429 is retried up to twice with backoff.
 - **Groceries** come from the supermarket store: `dk_product` shows its price, which can differ from the main-store price in search results.
 - **Shipping cost** is only calculated at checkout (login). `dk_product` shows how each offer ships, and `dk_plus_plans` the free-shipping plans.
 
@@ -245,7 +245,9 @@ and is free under the MIT license.
 Usually not: in testing the API answered from a foreign (Turkish) exit. If every tool fails with
 "refused the request (HTTP 403)", set `DIGIKALA_MCP_PROXY` to an HTTP proxy with an Iranian exit. (A 403 from just
 one call usually means an unknown category or brand code.) Normal system
-proxy variables are ignored on purpose.
+proxy variables are ignored on purpose. If Digikala serves a bot-check page, install the optional browser
+fallback (`uvx --with patchright==1.63.0 digikala-mcp` or `pip install digikala-mcp[browser]`), then run
+`patchright install chromium`.
 </details>
 
 <details>
@@ -280,7 +282,7 @@ npx @modelcontextprotocol/inspector uvx digikala-mcp
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DIGIKALA_MCP_PROXY` | unset | HTTP proxy for every request, e.g. `http://user:pass@host:port` |
+| `DIGIKALA_MCP_PROXY` | unset | HTTP proxy for every request, e.g. `http://user:pass@host:port`. A comma-separated list is used one at a time: the next proxy takes over when one is blocked (403/429) or cannot connect |
 
 <a id="فارسی"></a>
 
@@ -336,8 +338,8 @@ claude mcp add digikala -- uvx digikala-mcp
 ```bash
 git clone https://github.com/sepehr071/digikala-mcp && cd digikala-mcp
 uv sync
-uv run pytest            # offline, against recorded responses
-uv run pytest -m live    # real API
+uv run python -m pytest            # offline, against recorded responses
+uv run python -m pytest -m live    # real API
 uv run ruff check .
 ```
 
