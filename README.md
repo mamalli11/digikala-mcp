@@ -8,7 +8,8 @@
 
 **Let your AI agent shop around on Digikala (دیجی&zwnj;کالا).**<br>
 An unofficial, read-only MCP server for Iran's largest online store: search products, compare every seller's offer,<br>
-check a product's price history, read reviews and Q&A, and catch today's Incredible Offers, all from Claude, Cursor or Copilot.
+check a product's price history, read reviews and Q&A, catch today's Incredible Offers, and see whether<br>
+[Torob](https://torob.com) sells it cheaper, all from Claude, Cursor or Copilot.
 
 [![PyPI](https://img.shields.io/pypi/v/digikala-mcp?color=2563eb)](https://pypi.org/project/digikala-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/digikala-mcp)](https://pypi.org/project/digikala-mcp/)
@@ -29,11 +30,12 @@ check a product's price history, read reviews and Q&A, and catch today's Incredi
 
 - **What:** unofficial MCP server for Digikala (digikala.com, Iran). Queries in Persian or English, prices in Toman.
 - **Install:** `uvx digikala-mcp` or `claude mcp add digikala -- uvx digikala-mcp`. Transport: stdio. Needs [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python 3.10+).
-- **Auth:** none, no API key or account. Optional `DIGIKALA_MCP_PROXY` (HTTP proxy, or a comma-separated list, e.g. with an Iranian exit if Digikala blocks yours).
+  The Torob tools are not in the PyPI release yet (0.5.0); until the next one, run this repository: `uvx --from <path-to-clone> digikala-mcp`.
+- **Auth:** none, no API key or account. Optional `DIGIKALA_MCP_PROXY` (HTTP proxy, or a comma-separated list, e.g. with an Iranian exit if Digikala or Torob blocks yours).
 - **Access:** read-only. No login, cart, checkout or payment, so no confirmation is needed before calling any tool.
-- **Tools:** 23, all prefixed `dk_`. Start with `dk_find_cheapest`, `dk_search`, `dk_best_for_budget`, `dk_deals`.
-  Typical sequence: `dk_find_cheapest` -> `dk_product` -> `dk_price_history`.
-- **Use when:** finding, comparing or judging prices of products and sellers on Digikala, including the Fresh supermarket.
+- **Tools:** 26: 23 `dk_` tools for Digikala and 3 for [Torob](https://torob.com) (`torob_search`, `torob_offers`, `dk_compare_with_torob`). Start with `dk_find_cheapest`, `dk_search`, `dk_best_for_budget`, `dk_deals`.
+  Typical sequence: `dk_find_cheapest` -> `dk_product` -> `dk_price_history` -> `dk_compare_with_torob`.
+- **Use when:** finding, comparing or judging prices of products and sellers on Digikala, including the Fresh supermarket, and checking whether Torob sells the same product cheaper.
 - **Do not use when:** the user wants to buy, or needs shipping cost (only calculated at checkout) or anything behind a login.
 - **Output:** compact JSON. Prices in Toman, ratings 0-5 (`null` = not rated). Numeric product ids (the `<id>` of `dkp-<id>`) pass between tools.
 - **Machine-readable:** [`server.json`](https://github.com/sepehr071/digikala-mcp/blob/main/server.json) and the
@@ -72,6 +74,7 @@ cheapest offer, and whether today's price is a good one* means a lot of clicking
 - 🗂️ **Browse** categories, brands, sellers and best sellers, sorted by price, sales, views, newest or buyers' pick
 - ⭐ **Check quality** with reviews, pros/cons, buyer Q&A and seller reputation
 - ⚡ **Catch deals**: Incredible Offers and supermarket (Digikala Fresh) discounts
+- 🏪 **Torob price check**: find the same product on Torob, compare its cheapest new offer with Digikala's (used items and implausible prices are skipped), and list every shop's price, score and warranty line
 - 🧾 **Extras**: spec comparison, installment plans, Digikala Plus shipping plans, live gold and coin prices
 - 🔒 **Read-only by design**: no login, no cart, no orders, no payment
 
@@ -125,6 +128,7 @@ Click **Install in VS Code** above, or add to `.vscode/mcp.json`:
 <summary><b>Anything else</b></summary>
 
 It's a standard stdio MCP server: run `uvx digikala-mcp`, or `pip install digikala-mcp` and run `digikala-mcp`.
+The Torob tools need this repository's version (see [For AI agents](#for-ai-agents)).
 </details>
 
 Then just ask:
@@ -132,6 +136,7 @@ Then just ask:
 - "Cheapest AirPods-style earbuds under 3 million Toman with at least 4 stars?"
 - "Compare the Galaxy A07 64 GB and 128 GB. Is the bigger one worth the difference?"
 - "Is this seller reliable? CGDG9"
+- "Is the Galaxy A07 64 GB cheaper on Torob?"
 - <span dir="rtl">ارزان&zwnj;ترین شیر کم&zwnj;چرب در سوپرمارکت دیجی&zwnj;کالا چند است؟</span>
 
 ## How it works
@@ -199,7 +204,20 @@ id, title, brand, price, discount, stock, seller, rating, a photo URL (`image`) 
 | `dk_location` | Address → coordinates, or coordinates → address with Digikala city/province ids |
 </details>
 
-All 23 tools are annotated `readOnlyHint: true` and return compact structured JSON, so they don't flood the agent's context.
+<details open>
+<summary><b>⚖️ Torob price check</b> (3)</summary>
+
+| Tool | What it does |
+|---|---|
+| `dk_compare_with_torob` | Is a Digikala product cheaper on Torob? Finds the same model, size and region there, skips used items and implausibly cheap rows, and returns the price difference |
+| `torob_search` | Search Torob by words: the cheapest shop's price, shop count, loose-match flags |
+| `torob_offers` | Every Torob shop's price for one product: shop, city, score, last price change, warranty line |
+
+Torob has no public API: these tools use the endpoints torob.com itself calls and can break without notice. Torob
+answers some networks with a bot check (HTTP 490); it is usually temporary, and `DIGIKALA_MCP_PROXY` applies to it too.
+</details>
+
+All 26 tools are annotated `readOnlyHint: true` and return compact structured JSON, so they don't flood the agent's context.
 
 ## Good to know
 
@@ -221,7 +239,7 @@ All 23 tools are annotated `readOnlyHint: true` and return compact structured JS
 <details>
 <summary><b>Is there a Digikala API or MCP server for AI agents?</b></summary>
 
-Yes: `digikala-mcp` is an unofficial MCP server with 23 read-only tools for search, seller offers, price history,
+Yes: `digikala-mcp` is an unofficial MCP server with 26 read-only tools for search, seller offers, price history,
 reviews and deals. It calls the same public endpoints the digikala.com web app uses; no API key is needed.
 </details>
 
@@ -282,7 +300,8 @@ npx @modelcontextprotocol/inspector uvx digikala-mcp
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DIGIKALA_MCP_PROXY` | unset | HTTP proxy for every request, e.g. `http://user:pass@host:port`. A comma-separated list is used one at a time: the next proxy takes over when one is blocked (403/429) or cannot connect |
+| `DIGIKALA_MCP_PROXY` | unset | HTTP proxy for every request (Digikala and Torob), e.g. `http://user:pass@host:port`. A comma-separated list is used one at a time: the next proxy takes over when one is blocked (403/429) or cannot connect |
+| `DIGIKALA_MCP_LOG` | unset | File to append one JSON line per tool call to (time, tool, arguments, duration, ok, answer size; never the answers). Follow it live to see what an agent asks, e.g. `Get-Content mcp-calls.log -Wait` |
 
 <a id="فارسی"></a>
 
@@ -295,6 +314,7 @@ npx @modelcontextprotocol/inspector uvx digikala-mcp
 
 **چه کارهایی می&zwnj;کند**
 
+- **مقایسه با ترب** (torob.com): همان کالا را در ترب پیدا می‌کند، ارزان‌ترین پیشنهاد نو با همان مدل و حافظه را با دیجی‌کالا مقایسه می‌کند، و کالاهای کارکرده و قیمت‌های مشکوک را کنار می‌گذارد. همهٔ فروشگاه‌های ترب با امتیاز و خط گارانتی هم فهرست می‌شوند.
 - **جستجو** به فارسی یا انگلیسی، با فیلتر قیمت، برند، ویژگی (سیستم عامل، حافظه و ...)، رنگ، نوع فروشنده و ارسال سریع؛ کنار هر نتیجه می&zwnj;گوید عنوانش واقعاً با جستجو جور است یا نه.
 - **ارزان&zwnj;ترین کالای واقعی** را پیدا می&zwnj;کند (لوازم جانبی مثل قاب و کابل را کنار می&zwnj;گذارد) و پیشنهاد همه فروشندگان یک کالا را از ارزان به گران نشان می&zwnj;دهد.
 - **بهترین انتخاب با بودجه شما**: کالاها را بر اساس امتیازی رتبه&zwnj;بندی می&zwnj;کند که تعداد امتیازدهنده&zwnj;ها را هم در نظر می&zwnj;گیرد، تا یک کالای ۵ ستاره با ۳ رأی از کالای ۴٫۶ ستاره با ۹۰۰ رأی جلو نزند.
@@ -346,7 +366,7 @@ uv run ruff check .
 The live tests can also run on GitHub (Actions → Live → Run workflow). They are not scheduled: from GitHub's US
 runners Digikala times out on a few calls each run, while the same tests pass from an Iranian connection.
 
-Tools live in `src/digikala_mcp/catalog.py`, `product.py` and `services.py`; each is a typed async function with a
+Tools live in `src/digikala_mcp/catalog.py`, `product.py`, `services.py` and `torob.py`; each is a typed async function with a
 docstring that tells the agent when to use it. Issues and PRs are welcome, especially new tools and fixes for API changes.
 
 Releases: bump the version in `pyproject.toml` and `server.json`, then push a `v*` tag. GitHub Actions tests,
@@ -360,8 +380,8 @@ publishes to PyPI and the [MCP Registry](https://registry.modelcontextprotocol.i
 
 ## Disclaimer
 
-Unofficial and not affiliated with or endorsed by Digikala. It uses the public endpoints of the digikala.com web
-app, which can change without notice. Please keep request rates reasonable.
+Unofficial and not affiliated with or endorsed by Digikala or Torob. It uses the public endpoints of the digikala.com and torob.com web
+apps, which can change without notice. Please keep request rates reasonable.
 
 ## License
 
