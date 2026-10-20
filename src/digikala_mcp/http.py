@@ -1,4 +1,4 @@
-"""Shared async HTTP client for the Digikala API.
+"""Shared async HTTP client for the Digikala and Torob APIs.
 
 Every tool goes through `fetch`, which caps concurrency, passes the CDN cookie challenge
 and turns HTTP and body-level failures into `ToolError` messages the model can act on.
@@ -19,20 +19,28 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 API = "https://api.digikala.com"
 SITE = "https://www.digikala.com"
+TOROB_API = "https://api.torob.com"
+TOROB_SITE = "https://torob.com"
 
 HEADERS = {
     # User-Agent, sec-ch-ua and TLS come from the impersonated Chrome profile (see _get_client).
     "Accept": "application/json",
     "Accept-Language": "fa-IR,fa;q=0.9,en;q=0.8",
-    "Origin": SITE,
-    "x-web-client": "desktop",
-    "x-web-client-id": "web",
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
     "priority": "u=1, i",
-    # price-chart answers 429 to every call without it; the site sends it everywhere anyway.
-    "Referer": f"{SITE}/",
+}
+# What each site's own web app adds to its API calls, sent per request so one host's headers never reach the other.
+SITE_HEADERS = {
+    API: {
+        "Origin": SITE,
+        "x-web-client": "desktop",
+        "x-web-client-id": "web",
+        # price-chart answers 429 to every call without it; the site sends it everywhere anyway.
+        "Referer": f"{SITE}/",
+    },
+    TOROB_API: {"Origin": TOROB_SITE, "Referer": f"{TOROB_SITE}/"},
 }
 
 MAX_CONCURRENCY = 2
@@ -81,9 +89,10 @@ def set_transport(transport: httpx.AsyncBaseTransport | None) -> None:
 
 
 async def _same_host(r: httpx.Response) -> None:
-    """Refuse a redirect off api.digikala.com (the CDN cookie challenge redirects to the same URL)."""
-    if r.has_redirect_location and r.url.join(r.headers["location"]).host != httpx.URL(API).host:
-        raise ApiError(f"{httpx.URL(API).host} redirected to another host; refused.")
+    """Refuse a redirect off the requested API host (the CDN cookie challenge redirects to the same URL)."""
+    host = r.request.url.host
+    if r.has_redirect_location and r.url.join(r.headers["location"]).host != host:
+        raise ApiError(f"{host} redirected to another host; refused.")
 
 
 def _proxies() -> list[str]:
@@ -92,13 +101,15 @@ def _proxies() -> list[str]:
 
 
 # Plain CDN error pages are not challenges: an unknown brand/category answers a bare 403 HTML page.
-_CHALLENGE = re.compile(r"just a moment|captcha|challenge|arvan|attention required|enable javascript", re.I)
+_CHALLENGE = re.compile(
+    r"just a moment|captcha|challenge|arvan|attention required|enable javascript|آیا شما یک ربات", re.I
+)
 
 
 def _is_challenge(r: httpx.Response) -> bool:
-    """A bot-check page: 403/429/503 with an HTML body that carries a known challenge marker."""
+    """A bot-check page: 403/429/503 (Torob: 490) with an HTML body that carries a known challenge marker."""
     return (
-        r.status_code in (403, 429, 503)
+        r.status_code in (403, 429, 490, 503)
         and "html" in r.headers.get("content-type", "") + r.text[:20].lower()
         and bool(_CHALLENGE.search(r.text[:5000]))
     )
@@ -153,21 +164,21 @@ def _get_client() -> tuple[httpx.AsyncClient, asyncio.Semaphore]:
     return _client, _limit
 
 
-async def fetch(path: str, params: dict[str, Any] | None = None, cache: bool = True) -> Any:
-    """GET an api.digikala.com path (e.g. '/v1/search/') and return the parsed JSON body.
+async def fetch(path: str, params: dict[str, Any] | None = None, cache: bool = True, *, base: str = API) -> Any:
+    """GET a path (e.g. '/v1/search/') on api.digikala.com, or on `base` (TOROB_API), and return the parsed JSON body.
 
     The body `status` is authoritative: HTTP 200 with `{"status": 404}` raises ApiError too.
     Successful bodies are reused for CACHE_SECONDS (unless cache=False); callers must not mutate them.
     A timeout, network error, 5xx or 429 is retried up to MAX_RETRIES times with jittered exponential backoff,
     or after Retry-After when sent (every call is an idempotent GET). Other 4xx (403 too) are never retried.
     """
-    key = (path, tuple(sorted((params or {}).items())))
+    key = (base + path, tuple(sorted((params or {}).items())))
     hit = _cache.get(key) if cache else None
     if hit and time.monotonic() - hit[0] < CACHE_SECONDS:
         return hit[1]
     for attempt in range(MAX_RETRIES + 1):
         try:
-            body = await _get(path, params)
+            body = await _get(path, params, base)
             break
         except ApiError as e:
             if attempt == MAX_RETRIES or (e.status is not None and e.status < 500 and e.status != 429):
@@ -183,12 +194,14 @@ async def fetch(path: str, params: dict[str, Any] | None = None, cache: bool = T
     return body
 
 
-async def _send(client: httpx.AsyncClient, limit: asyncio.Semaphore, path: str, params: dict[str, Any] | None):
-    host = httpx.URL(API).host
+async def _send(
+    client: httpx.AsyncClient, limit: asyncio.Semaphore, path: str, params: dict[str, Any] | None, base: str
+):
+    host = httpx.URL(base).host
     try:
         async with limit:
             await asyncio.sleep(random.uniform(*JITTER))
-            return await client.get(API + path, params=params)
+            return await client.get(base + path, params=params, headers=SITE_HEADERS[base])
     except httpx.TimeoutException as e:
         raise ApiError(f"{host} did not answer in time. Try again in a moment.") from e
     except httpx.TooManyRedirects as e:
@@ -244,15 +257,16 @@ async def _clear_challenge(client: httpx.AsyncClient) -> None:
         _cleared = (client, time.monotonic())
 
 
-async def _get(path: str, params: dict[str, Any] | None) -> Any:
+async def _get(path: str, params: dict[str, Any] | None, base: str = API) -> Any:
     client, limit = _get_client()
-    host = httpx.URL(API).host
-    r = await _send(client, limit, path, params)
+    host = httpx.URL(base).host
+    r = await _send(client, limit, path, params, base)
     if _is_challenge(r):
         _next_proxy(client)
         client, limit = _get_client()
-        await _clear_challenge(client)
-        r = await _send(client, limit, path, params)  # one retry; a second block is final
+        if base == API:  # the browser rung only knows Digikala's home page
+            await _clear_challenge(client)
+        r = await _send(client, limit, path, params, base)  # one retry; a second block is final
         if _is_challenge(r):
             _next_proxy(client)
     try:
@@ -281,6 +295,11 @@ def _status_message(code: int, host: str, detail: str) -> str:
             f"{host} refused the request (HTTP 403). Digikala answers 403 for an unknown category or brand "
             "code: check it with dk_categories, dk_suggest or dk_product's brand_code. If every dk_ tool fails "
             "this way, your IP is blocked: turn off VPN/proxy, or set DIGIKALA_MCP_PROXY to a proxy with an Iranian IP."
+        )
+    if code == 490:
+        return (
+            f"{host} served a bot check (HTTP 490). It is usually temporary: retry in a few minutes, or set "
+            "DIGIKALA_MCP_PROXY to a proxy with an Iranian IP."
         )
     if code == 404:
         return f"Not found on {host} (status 404). Check the product id / category, brand or seller code."
