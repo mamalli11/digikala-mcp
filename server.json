@@ -25,6 +25,12 @@
           "description": "Optional HTTP proxy URL for every request (e.g. one with an Iranian exit if Digikala blocks yours), or a comma-separated list: one is used until it gets blocked or fails to connect, then the next. System proxy settings are ignored.",
           "isRequired": false,
           "isSecret": false
+        },
+        {
+          "name": "DIGIKALA_MCP_LOG",
+          "description": "Optional file path: one JSON line per tool call (time, tool, arguments, duration, ok, answer size) is appended to it, to follow what an agent asks. Answers are never written.",
+          "isRequired": false,
+          "isSecret": false
         }
       ]
     }
