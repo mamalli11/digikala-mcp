@@ -16,9 +16,9 @@ pytestmark = pytest.mark.anyio
 
 async def test_all_tools_are_read_only(client):
     tools = (await client.list_tools()).tools
-    assert len(tools) == 23
+    assert len(tools) == 26
     for t in tools:
-        assert t.name.startswith("dk_"), t.name
+        assert t.name.startswith(("dk_", "torob_")), t.name
         assert t.annotations.read_only_hint is True, t.name
         assert t.description and t.title, t.name
 
@@ -117,6 +117,7 @@ def test_is_challenge():
     html = {"content-type": "text/html"}
     assert http._is_challenge(httpx.Response(403, text="<html>Just a moment...</html>", headers=html))
     assert http._is_challenge(httpx.Response(503, text="<!doctype html><title>ArvanCloud</title>"))
+    assert http._is_challenge(httpx.Response(490, text="<title>آیا شما یک ربات هستید؟ | ترب</title>", headers=html))
     assert not http._is_challenge(httpx.Response(403, text="<html>Access Denied ... Error code : 403</html>"))
     assert not http._is_challenge(httpx.Response(403, json={"status": 403}))
     assert not http._is_challenge(httpx.Response(200, text="<html></html>", headers=html))
@@ -207,3 +208,63 @@ async def test_retry_after_is_honoured_and_capped(monkeypatch, client, api):
     api["/v1/best-selling/"] = lambda r: httpx.Response(429, json={"status": 429})
     assert (await client.call_tool("dk_best_sellers", {})).is_error
     assert sum(r.url.path == "/v1/best-selling/" for r in api.calls) == 3  # gives up after MAX_RETRIES
+
+
+async def test_each_site_gets_only_its_own_headers(api):
+    api["/v1/autocomplete/"] = {"status": 200, "data": {}}
+    api["/v4/base-product/search/"] = {"results": []}
+    await http.fetch("/v1/autocomplete/")
+    await http.fetch("/v4/base-product/search/", base=http.TOROB_API)
+    dk, torob = api.calls
+    assert dk.url.host == "api.digikala.com" and dk.headers["Origin"] == "https://www.digikala.com"
+    assert dk.headers["x-web-client"] == "desktop"
+    assert torob.url.host == "api.torob.com" and torob.headers["Origin"] == "https://torob.com"
+    assert torob.headers["Referer"] == "https://torob.com/" and "x-web-client" not in torob.headers
+
+
+async def test_same_path_on_two_sites_is_cached_apart(api):
+    api["/v1/shared/"] = lambda r: httpx.Response(200, json={"status": 200, "host": r.url.host})
+    assert (await http.fetch("/v1/shared/"))["host"] == "api.digikala.com"
+    assert (await http.fetch("/v1/shared/", base=http.TOROB_API))["host"] == "api.torob.com"
+
+
+async def test_torob_bot_check_is_explained_and_never_opens_the_browser(monkeypatch, api):
+    async def no_browser(proxy):
+        raise AssertionError("the browser rung only knows digikala.com")
+
+    monkeypatch.setattr(http, "_browser_cookies", no_browser)
+    html = {"content-type": "text/html"}
+    api["/v4/base-product/search/"] = lambda r: httpx.Response(
+        490, text="<title>آیا شما یک ربات هستید؟</title>", headers=html
+    )
+    with pytest.raises(http.ApiError, match="bot check") as e:
+        await http.fetch("/v4/base-product/search/", base=http.TOROB_API)
+    assert e.value.status == 490 and "api.torob.com" in str(e.value)
+    assert len(api.calls) == 2  # one retry after the first block, then final
+
+
+async def test_redirect_off_torob_is_refused(api):
+    api["/v4/base-product/search/"] = lambda r: httpx.Response(307, headers={"Location": "https://api.digikala.com/x"})
+    with pytest.raises(http.ApiError, match="another host"):
+        await http.fetch("/v4/base-product/search/", base=http.TOROB_API)
+
+
+async def test_tool_calls_are_logged_only_when_asked(client, api, monkeypatch, tmp_path):
+    api["/v1/autocomplete/"] = fixture("autocomplete.json")
+    await client.call_tool("dk_suggest", {"query": "samsung"})  # no DIGIKALA_MCP_LOG: nothing is written
+    log = tmp_path / "calls.log"
+    monkeypatch.setenv("DIGIKALA_MCP_LOG", str(log))
+    await client.call_tool("dk_suggest", {"query": "سامسونگ"})
+    api["/v1/best-selling/"] = lambda r: httpx.Response(404, json={"status": 404})
+    assert (await client.call_tool("dk_best_sellers", {})).is_error
+    first, second = (json.loads(line) for line in log.read_text(encoding="utf-8").splitlines())
+    assert first["tool"] == "dk_suggest" and first["args"] == {"query": "سامسونگ"} and first["ok"] is True
+    assert first["chars"] > 0 and first["ms"] >= 0 and len(first["time"]) == 8
+    assert second["tool"] == "dk_best_sellers" and second["ok"] is False and "Not found" in second["error"]
+    assert "keywords" not in log.read_text(encoding="utf-8")  # sizes and arguments only, never the answer
+
+
+async def test_a_bad_log_path_never_breaks_a_tool(client, api, monkeypatch, tmp_path):
+    api["/v1/autocomplete/"] = fixture("autocomplete.json")
+    monkeypatch.setenv("DIGIKALA_MCP_LOG", str(tmp_path / "no" / "such" / "dir" / "calls.log"))
+    assert not (await client.call_tool("dk_suggest", {"query": "samsung"})).is_error
